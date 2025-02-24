@@ -1,9 +1,9 @@
 {
   "required": true,
   "package": "me.cortex.nvidium.mixin",
-  "compatibilityLevel": "JAVA_17",
+  "compatibilityLevel": "JAVA_21",
   "client": [
-    "minecraft.LightMapAccessor",
+    "minecraft.LightmapFramebufferAccessor",
     "minecraft.MixinBackgroundRenderer",
     "minecraft.MixinGameRenderer",
     "minecraft.MixinWindow",

@@ -3,12 +3,12 @@ package me.cortex.nvidium.managers;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import me.cortex.nvidium.sodiumCompat.IRenderSectionExtension;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkUpdateType;
-import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
-import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionFlags;
-import me.jellysquid.mods.sodium.client.render.chunk.occlusion.OcclusionCuller;
-import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
+import net.caffeinemc.mods.sodium.client.render.chunk.ChunkUpdateType;
+import net.caffeinemc.mods.sodium.client.render.chunk.RenderSection;
+import net.caffeinemc.mods.sodium.client.render.chunk.RenderSectionFlags;
+import net.caffeinemc.mods.sodium.client.render.chunk.occlusion.OcclusionCuller;
+import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.texture.Sprite;
@@ -71,17 +71,17 @@ public class AsyncOcclusionTracker {
             List<RenderSection> blockEntitySections = new ArrayList<>();
             Set<Sprite> animatedSpriteSet = animateVisibleSpritesOnly?new HashSet<>():null;
             int[] visibleGeometryCounter = new int[1];
-            final OcclusionCuller.Visitor visitor = (section, visible) -> {
-                if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
+            final OcclusionCuller.Visitor visitor = (section) -> {
+                if (section.getPendingUpdate() != null && section.getTaskCancellationToken() == null) {
                     if ((!((IRenderSectionExtension)section).isSubmittedRebuild()) && !((IRenderSectionExtension)section).isSeen()) {//If it is in submission queue or seen dont enqueue
                         //Set that the section has been seen
                         ((IRenderSectionExtension)section).isSeen(true);
                         chunkUpdates.add(section);
                     }
                 }
-                if (!visible) {
-                    return;
-                }
+//                if (!section.) {
+//                    return;
+//                }
 
                 if ((section.getFlags()&(1<<RenderSectionFlags.HAS_BLOCK_GEOMETRY))!=0) {
                     visibleGeometryCounter[0]++;
@@ -144,7 +144,7 @@ public class AsyncOcclusionTracker {
                 if (section.isDisposed())
                     continue;
                 var type = section.getPendingUpdate();
-                if (type != null && section.getBuildCancellationToken() == null) {
+                if (type != null && section.getTaskCancellationToken() == null) {
                     var queue = outputRebuildQueue.get(type);
                     if (queue.size() < type.getMaximumQueueSize()) {
                         ((IRenderSectionExtension) section).isSubmittedRebuild(true);
@@ -186,7 +186,7 @@ public class AsyncOcclusionTracker {
     private boolean shouldUseOcclusionCulling(Camera camera, boolean spectator) {
         BlockPos origin = camera.getBlockPos();
         boolean useOcclusionCulling;
-        if (spectator && this.world.getBlockState(origin).isOpaqueFullCube(this.world, origin)) {
+        if (spectator && this.world.getBlockState(origin).isOpaqueFullCube()) {
             useOcclusionCulling = false;
         } else {
             useOcclusionCulling = MinecraftClient.getInstance().chunkCullingEnabled;
@@ -196,10 +196,10 @@ public class AsyncOcclusionTracker {
     }
 
     private float getEffectiveRenderDistance() {
-        float[] color = RenderSystem.getShaderFogColor();
-        float distance = RenderSystem.getShaderFogEnd();
+        float blue = RenderSystem.getShaderFog().blue();
+        float distance = RenderSystem.getShaderFog().end();
         float renderDistance = this.getRenderDistance();
-        return !MathHelper.approximatelyEquals(color[3], 1.0F) ? renderDistance : Math.min(renderDistance, distance + 0.5F);
+        return !MathHelper.approximatelyEquals(blue, 1.0F) ? renderDistance : Math.min(renderDistance, distance + 0.5F);
     }
 
     private float getRenderDistance() {
