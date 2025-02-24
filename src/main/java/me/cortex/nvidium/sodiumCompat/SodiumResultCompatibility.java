@@ -19,17 +19,6 @@ public class SodiumResultCompatibility {
         return index < parts.getVertexCounts().length;
     }
 
-    private static int getVertexRangeStart(BuiltSectionMeshParts parts, int index) {
-        int buffer = 0;
-        int[] counts = parts.getVertexCounts();
-
-        for (int i = 0; i < index; i++) {
-            buffer += counts[i];
-        }
-
-        return buffer;
-    }
-
     private static int getVertexRangeCount(BuiltSectionMeshParts parts, int index) {
         return parts.getVertexCounts()[index];
     }
@@ -115,16 +104,19 @@ public class SodiumResultCompatibility {
             int quadId = 0;
             long[] sortingData = new long[quadCount];
             long[] srcs = new long[7];
+            long startOffset = 0;
             for (int i = 0; i < 7; i++) {
                 if (hasPart(translucentData, i)) {
-                    long src = MemoryUtil.memAddress(translucentData.getVertexData().getDirectBuffer()) + (long) getVertexRangeStart(translucentData, i) * formatSize;
+                    long src = MemoryUtil.memAddress(translucentData.getVertexData().getDirectBuffer()) + startOffset * formatSize;
+                    int rangeCount = getVertexRangeCount(translucentData, i);
+                    startOffset += (long) rangeCount;
                     srcs[i] = src;
 
                     float cx = 0;
                     float cy = 0;
                     float cz = 0;
                     //Update the meta bits of the model format
-                    for (int j = 0; j < getVertexRangeCount(translucentData, i); j++) {
+                    for (int j = 0; j < rangeCount; j++) {
                         long base = src + (long) j * formatSize;
                         byte flags = (byte) 0b100;//Mipping, No alpha cut
                         MemoryUtil.memPutByte(base + 6L, flags);//Note: the 6 here is the offset into the vertex format
@@ -187,16 +179,20 @@ public class SodiumResultCompatibility {
         var cutout = result.meshes.get(DefaultTerrainRenderPasses.CUTOUT);
 
         //Do all but translucent
+        long solidStartOffset = 0;
+        long cutoutStartOffset = 0;
         for (int i = 0; i < 7; i++) {
             int poff = offset;
             if (solid != null) {
                 if (hasPart(solid, i)) {
-                    long src = MemoryUtil.memAddress(solid.getVertexData().getDirectBuffer()) + (long) getVertexRangeStart(solid, i) * formatSize;
+                    long src = MemoryUtil.memAddress(solid.getVertexData().getDirectBuffer()) + solidStartOffset * formatSize;
+                    int rangeCount = getVertexRangeCount(solid, i);
+                    solidStartOffset += (long) rangeCount;
                     long dst = outPtr + offset * 4L * formatSize;
-                    MemoryUtil.memCopy(src, dst, (long) getVertexRangeCount(solid, i) * formatSize);
+                    MemoryUtil.memCopy(src, dst, (long) rangeCount * formatSize);
 
                     //Update the meta bits of the model format
-                    for (int j = 0; j < getVertexRangeCount(solid, i); j++) {
+                    for (int j = 0; j < rangeCount; j++) {
                         long base = dst+ (long) j * formatSize;
                         byte flags = (byte) 0b100;//Mipping, No alpha cut
                         MemoryUtil.memPutByte(base + 6L, flags);//Note: the 6 here is the offset into the vertex format
@@ -204,17 +200,19 @@ public class SodiumResultCompatibility {
                         updateSectionBounds(min, max, base);
                     }
 
-                    offset += getVertexRangeCount(solid, i)/4;
+                    offset += rangeCount/4;
                 }
             }
             if (cutout != null) {
                 if (hasPart(cutout, i)) {
-                    long src = MemoryUtil.memAddress(cutout.getVertexData().getDirectBuffer()) + (long) getVertexRangeStart(cutout, i) * formatSize;
+                    long src = MemoryUtil.memAddress(cutout.getVertexData().getDirectBuffer()) + cutoutStartOffset * formatSize;
+                    int rangeCount = getVertexRangeCount(cutout, i);
+                    cutoutStartOffset += (long) rangeCount;
                     long dst = outPtr + offset * 4L * formatSize;
-                    MemoryUtil.memCopy(src, dst, (long) getVertexRangeCount(cutout, i) * formatSize);
+                    MemoryUtil.memCopy(src, dst, (long) rangeCount * formatSize);
 
                     //Update the meta bits of the model format
-                    for (int j = 0; j < getVertexRangeCount(cutout, i); j++) {
+                    for (int j = 0; j < rangeCount; j++) {
                         long base = dst + (long) j * formatSize;
                         short sflags = MemoryUtil.memGetByte(base + 6L);
                         short mipbits = (short) ((sflags&(3<<1))>>1);
@@ -228,14 +226,14 @@ public class SodiumResultCompatibility {
                         updateSectionBounds(min, max, base);
                     }
 
-                    offset += getVertexRangeCount(cutout, i)/4;
+                    offset += rangeCount/4;
                 }
             }
             outOffsets[i] = (short) (offset - poff);
         }
 
         if (offset*4*formatSize != output.getLength()) {
-//            throw new IllegalStateException();
+            throw new IllegalStateException();
         }
     }
 
