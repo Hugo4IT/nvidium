@@ -8,6 +8,8 @@
 > not-very-good job at updating this mod, please do not report bugs & crashes experienced with Nvidiupdated to the
 > original mod owner Cortex, as it likely has nothing to do with their mod.
 
+Requires Sodium 0.6.9 and Fabric Loader 0.16.10 to work, Iris 1.8.8 is optional
+
 [![Modrinth](https://img.shields.io/modrinth/dt/nvidium?logo=modrinth)](https://modrinth.com/mod/nvidium)
 
 Nvidium is an alternate rendering backing for sodium, it uses cutting edge nvidia features to render huge amounts of
