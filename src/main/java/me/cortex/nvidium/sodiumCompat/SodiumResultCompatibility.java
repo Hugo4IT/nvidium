@@ -16,15 +16,22 @@ import org.lwjgl.system.MemoryUtil;
 
 public class SodiumResultCompatibility {
     private static boolean hasPart(BuiltSectionMeshParts parts, int index) {
-        return index * 2 < parts.getVertexCounts().length;
+        return index < parts.getVertexCounts().length;
     }
 
     private static int getVertexRangeStart(BuiltSectionMeshParts parts, int index) {
-        return parts.getVertexCounts()[index];
+        int buffer = 0;
+        int[] counts = parts.getVertexCounts();
+
+        for (int i = 0; i < index; i++) {
+            buffer += counts[i];
+        }
+
+        return buffer;
     }
 
     private static int getVertexRangeCount(BuiltSectionMeshParts parts, int index) {
-        return parts.getVertexCounts()[index + 1];
+        return parts.getVertexCounts()[index];
     }
 
     public static RepackagedSectionOutput repackage(ChunkBuildOutput result) {

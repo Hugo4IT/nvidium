@@ -6,10 +6,11 @@
     "commit": "${commit}",
     "buildtime": "${buildtime}"
   },
-  "name": "Nvidium",
-  "description": "Replacement rendering engine for sodium",
+  "name": "Nvidiupdated",
+  "description": "Replacement rendering engine for sodium (updated to 1.21.4)",
   "authors": [
-    "Cortex"
+    "Cortex",
+    "Hugo4IT"
   ],
   "contact": {},
   "license": "LGPL-3.0",
